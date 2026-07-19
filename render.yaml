@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: comix-scraper-api
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node api/server.js
+    envVars:
+      - key: RUN_AS_SERVER
+        value: "1"
+      - key: NODE_ENV
+        value: production
+    healthCheckPath: /api
+    autoDeploy: true

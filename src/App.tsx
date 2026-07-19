@@ -3,7 +3,7 @@ import {
   BookOpen,
   Home,
   Tags,
-  Collection,
+  Library,
   MessageSquare,
   User,
   FileText,
@@ -32,15 +32,103 @@ interface Endpoint {
 }
 
 const ENDPOINTS: Endpoint[] = [
-  { id: 'home', method: 'GET', path: '/api/home', label: 'Home', description: 'Trending, hot, latest, recent comments, trending collections, and top uploaders.', category: 'Discovery', icon: Home },
-  { id: 'genres', method: 'GET', path: '/api/genres', label: 'Genres', description: 'All genres and demographics with manga counts.', category: 'Discovery', icon: Tags },
-  { id: 'manga', method: 'GET', path: '/api/manga/:hid', label: 'Manga Detail', description: 'Full manga details, synopsis, genres, tags, recommendations, and scanlation groups.', category: 'Manga', icon: BookOpen, params: [{ name: 'hid', placeholder: 'vy36n', required: true }] },
-  { id: 'chapter', method: 'GET', path: '/api/chapter/:hid/:chapterSlug', label: 'Chapter', description: 'Chapter read metadata and the parent manga detail.', category: 'Manga', icon: FileText, params: [{ name: 'hid', placeholder: 'vy36n-the-tyrants-overprotective-contract-mother', required: true }, { name: 'chapterSlug', placeholder: '5931836-chapter-1', required: true }] },
-  { id: 'collections', method: 'GET', path: '/api/collections', label: 'Collections (HTML)', description: 'Collections listing scraped from the collections page.', category: 'Collections', icon: Collection },
-  { id: 'collectionsList', method: 'GET', path: '/api/collections/list', label: 'Collections (API)', description: 'Paginated collections via the upstream public API.', category: 'Collections', icon: Layers, queryParams: [{ name: 'sort', placeholder: 'trending', defaultValue: 'trending' }, { name: 'page', placeholder: '1', defaultValue: '1' }, { name: 'limit', placeholder: '20', defaultValue: '20' }] },
-  { id: 'collection', method: 'GET', path: '/api/collection/:id', label: 'Collection Detail', description: 'A single collection with owner, cover, and preview of contained manga.', category: 'Collections', icon: Collection, params: [{ name: 'id', placeholder: '75221', required: true }] },
-  { id: 'comments', method: 'GET', path: '/api/comments', label: 'Comments', description: 'Recent site-wide comments via the upstream public API. Paginated.', category: 'Community', icon: MessageSquare, queryParams: [{ name: 'page', placeholder: '1', defaultValue: '1' }, { name: 'limit', placeholder: '20', defaultValue: '20' }] },
-  { id: 'profile', method: 'GET', path: '/api/profile/:hashId', label: 'User Profile', description: 'A user profile by hashId.', category: 'Community', icon: User, params: [{ name: 'hashId', placeholder: 'qlkv9d', required: true }] },
+  {
+    id: 'home',
+    method: 'GET',
+    path: '/api/home',
+    label: 'Home',
+    description: 'Trending, hot, latest, recent comments, trending collections, and top uploaders.',
+    category: 'Discovery',
+    icon: Home,
+  },
+  {
+    id: 'genres',
+    method: 'GET',
+    path: '/api/genres',
+    label: 'Genres',
+    description: 'All genres and demographics with manga counts.',
+    category: 'Discovery',
+    icon: Tags,
+  },
+  {
+    id: 'manga',
+    method: 'GET',
+    path: '/api/manga/:hid',
+    label: 'Manga Detail',
+    description: 'Full manga details, synopsis, genres, tags, recommendations, and scanlation groups.',
+    category: 'Manga',
+    icon: BookOpen,
+    params: [{ name: 'hid', placeholder: 'vy36n', required: true }],
+  },
+  {
+    id: 'chapter',
+    method: 'GET',
+    path: '/api/chapter/:hid/:chapterSlug',
+    label: 'Chapter',
+    description: 'Chapter read metadata and the parent manga detail.',
+    category: 'Manga',
+    icon: FileText,
+    params: [
+      { name: 'hid', placeholder: 'vy36n-the-tyrants-overprotective-contract-mother', required: true },
+      { name: 'chapterSlug', placeholder: '5931836-chapter-1', required: true },
+    ],
+  },
+  {
+    id: 'collections',
+    method: 'GET',
+    path: '/api/collections',
+    label: 'Collections (HTML)',
+    description: 'Collections listing scraped from the collections page.',
+    category: 'Collections',
+    icon: Library,
+  },
+  {
+    id: 'collectionsList',
+    method: 'GET',
+    path: '/api/collections/list',
+    label: 'Collections (API)',
+    description: 'Paginated collections via the upstream public API.',
+    category: 'Collections',
+    icon: Layers,
+    queryParams: [
+      { name: 'sort', placeholder: 'trending', defaultValue: 'trending' },
+      { name: 'page', placeholder: '1', defaultValue: '1' },
+      { name: 'limit', placeholder: '20', defaultValue: '20' },
+    ],
+  },
+  {
+    id: 'collection',
+    method: 'GET',
+    path: '/api/collection/:id',
+    label: 'Collection Detail',
+    description: 'A single collection with owner, cover, and preview of contained manga.',
+    category: 'Collections',
+    icon: Library,
+    params: [{ name: 'id', placeholder: '75221', required: true }],
+  },
+  {
+    id: 'comments',
+    method: 'GET',
+    path: '/api/comments',
+    label: 'Comments',
+    description: 'Recent site-wide comments via the upstream public API. Paginated.',
+    category: 'Community',
+    icon: MessageSquare,
+    queryParams: [
+      { name: 'page', placeholder: '1', defaultValue: '1' },
+      { name: 'limit', placeholder: '20', defaultValue: '20' },
+    ],
+  },
+  {
+    id: 'profile',
+    method: 'GET',
+    path: '/api/profile/:hashId',
+    label: 'User Profile',
+    description: 'A user profile by hashId.',
+    category: 'Community',
+    icon: User,
+    params: [{ name: 'hashId', placeholder: 'qlkv9d', required: true }],
+  },
 ];
 
 const CATEGORIES = ['Discovery', 'Manga', 'Collections', 'Community'] as const;
@@ -102,7 +190,9 @@ function App() {
     }
   }, []);
 
-  useEffect(() => { fetchEndpoint('/api/home'); }, [fetchEndpoint]);
+  useEffect(() => {
+    fetchEndpoint('/api/home');
+  }, [fetchEndpoint]);
 
   const handleSelect = (ep: Endpoint) => {
     setSelectedId(ep.id);
@@ -145,6 +235,7 @@ function App() {
           </div>
         </div>
       </header>
+
       <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 lg:flex-row">
         <aside className="lg:w-72 lg:shrink-0">
           <div className="lg:sticky lg:top-20">
@@ -180,6 +271,7 @@ function App() {
             </nav>
           </div>
         </aside>
+
         <main className="min-w-0 flex-1 space-y-5">
           <section className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5 shadow-xl">
             <div className="flex items-start justify-between gap-4">
@@ -193,6 +285,7 @@ function App() {
               </div>
               <SelectedIcon className="hidden h-8 w-8 shrink-0 text-slate-600 sm:block" />
             </div>
+
             {(selected.params || selected.queryParams) && (
               <div className="mt-4 space-y-3">
                 {selected.params && selected.params.length > 0 && (
@@ -226,6 +319,7 @@ function App() {
                 )}
               </div>
             )}
+
             <div className="mt-4 flex items-stretch gap-2">
               <div className="flex flex-1 items-center gap-2 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5">
                 <span className="text-xs font-bold text-slate-500">GET</span>
@@ -240,6 +334,7 @@ function App() {
               </button>
             </div>
           </section>
+
           <section className="rounded-2xl border border-slate-800 bg-slate-900/50 shadow-xl">
             <div className="flex items-center justify-between border-b border-slate-800 px-5 py-3">
               <div className="flex items-center gap-2">
@@ -270,6 +365,7 @@ function App() {
               )}
             </div>
           </section>
+
           <section className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5 shadow-xl">
             <div className="mb-3 flex items-center gap-2">
               <Zap className="h-4 w-4 text-amber-400" />
@@ -289,6 +385,7 @@ function App() {
           </section>
         </main>
       </div>
+
       <footer className="border-t border-slate-800 py-6">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 text-xs text-slate-500 sm:flex-row sm:px-6">
           <p>Comix Scraping API - for educational purposes. Data belongs to comix.to.</p>

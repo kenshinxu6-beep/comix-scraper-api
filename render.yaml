@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: comix-scraper-api
+    name: asurascans-api
     env: node
     plan: free
     buildCommand: npm install

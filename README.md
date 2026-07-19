@@ -1,20 +1,17 @@
-# Comix.to Scraping API
+# AsuraScans.com Scraping API
 
-A zero-dependency scraping API for [comix.to](https://comix.to) that extracts data from the site's server-rendered HTML pages. Includes a live API explorer UI to test every endpoint in the browser.
+A zero-dependency scraping API for [asurascans.com](https://asurascans.com) that extracts data from the site's server-rendered HTML pages. Includes a live API explorer UI to test every endpoint in the browser.
 
 ## Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api` or `/api/home` | Home page data: trending, hot, latest, comments, collections, top uploaders |
-| GET | `/api/genres` | All genres and demographics with counts |
-| GET | `/api/manga/:hid` | Manga detail, recommendations, and groups (by hid or full slug) |
-| GET | `/api/chapter/:hid/:chapterSlug` | Chapter read metadata and parent manga |
-| GET | `/api/collections` | Collections listing (from HTML page) |
-| GET | `/api/collections/list?sort=trending&page=1&limit=20` | Paginated collections via upstream API |
-| GET | `/api/collection/:id` | Collection detail by id |
-| GET | `/api/comments?page=1&limit=20` | Recent site-wide comments |
-| GET | `/api/profile/:hashId` | User profile by hashId |
+| GET | `/api` or `/api/home` | Home page data: trending manga and featured series |
+| GET | `/api/browse?page=1&name=solo&genres=action&status=ongoing&type=manhwa` | Browse/filter manga with pagination |
+| GET | `/api/search?q=solo&page=1` | Search manga by name |
+| GET | `/api/manga/:slug` | Manga detail: title, cover, rating, status, type, artist, genres, synopsis, full chapter list |
+| GET | `/api/chapter/:slug/:chapterNumber` | Chapter page images as direct CDN URLs |
+| GET | `/api/series-ranking` | Top ranked manga |
 
 ## Running Locally
 
@@ -48,11 +45,13 @@ npm run dev    # Vite dev server only (proxies /api to 3999)
 
 ## How It Works
 
-Comix.to is a single-page app that embeds all page data as JSON inside a `<script type="application/json" id="initial-data">` tag in the server-rendered HTML. The scraper fetches each page, extracts this JSON block, and returns it as a clean API response.
+asurascans.com is an Astro SSR site. All manga data is in server-rendered HTML. The scraper fetches each page and uses regex to extract:
 
-Some endpoints (comments, collections list) use comix.to's public upstream API directly (`/api/v1/comments`, `/api/v1/collections`) which don't require authentication.
-
-**Note:** Chapter page images are loaded via a token-gated API protected by anti-bot JavaScript. They are not available through this scraping API.
+- **Home**: Trending carousel and featured manga from the homepage
+- **Browse**: Manga cards with cover, rating, chapter count, and status from `/browse`
+- **Search**: Filtered results from `/browse?name=...`
+- **Manga Detail**: Title, cover, rating, status, type, artist, genres, synopsis, and full chapter list from `/comics/:slug`
+- **Chapter Pages**: Direct CDN image URLs from `cdn.asurascans.com` embedded in chapter pages
 
 ## Tech Stack
 

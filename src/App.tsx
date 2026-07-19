@@ -2,12 +2,11 @@ import { useState, useCallback, useEffect } from 'react';
 import {
   BookOpen,
   Home,
-  Tags,
-  Library,
-  MessageSquare,
-  User,
-  FileText,
+  Search,
+  Compass,
   Layers,
+  FileText,
+  Trophy,
   Send,
   Copy,
   Check,
@@ -37,115 +36,89 @@ const ENDPOINTS: Endpoint[] = [
     method: 'GET',
     path: '/api/home',
     label: 'Home',
-    description: 'Trending, hot, latest, recent comments, trending collections, and top uploaders.',
+    description: 'Trending manga and featured series from the homepage.',
     category: 'Discovery',
     icon: Home,
   },
   {
-    id: 'genres',
+    id: 'browse',
     method: 'GET',
-    path: '/api/genres',
-    label: 'Genres',
-    description: 'All genres and demographics with manga counts.',
+    path: '/api/browse',
+    label: 'Browse',
+    description: 'Browse all manga with filtering by genre, status, type, and pagination.',
     category: 'Discovery',
-    icon: Tags,
+    icon: Compass,
+    queryParams: [
+      { name: 'page', placeholder: '1', defaultValue: '1' },
+      { name: 'name', placeholder: 'solo' },
+      { name: 'genres', placeholder: 'action' },
+      { name: 'status', placeholder: 'ongoing' },
+      { name: 'type', placeholder: 'manhwa' },
+    ],
+  },
+  {
+    id: 'search',
+    method: 'GET',
+    path: '/api/search',
+    label: 'Search',
+    description: 'Search manga by name. Returns matching series with cover, rating, and status.',
+    category: 'Discovery',
+    icon: Search,
+    queryParams: [
+      { name: 'q', placeholder: 'solo leveling' },
+      { name: 'page', placeholder: '1', defaultValue: '1' },
+    ],
   },
   {
     id: 'manga',
     method: 'GET',
-    path: '/api/manga/:hid',
+    path: '/api/manga/:slug',
     label: 'Manga Detail',
-    description: 'Full manga details, synopsis, genres, tags, recommendations, and scanlation groups.',
+    description: 'Full manga details: title, cover, rating, status, type, artist, genres, synopsis, and full chapter list.',
     category: 'Manga',
     icon: BookOpen,
-    params: [{ name: 'hid', placeholder: 'vy36n', required: true }],
+    params: [{ name: 'slug', placeholder: 'is-it-bad-that-the-main-character-s-a-roleplayer-1d35e5bd', required: true }],
   },
   {
     id: 'chapter',
     method: 'GET',
-    path: '/api/chapter/:hid/:chapterSlug',
-    label: 'Chapter',
-    description: 'Chapter read metadata and the parent manga detail.',
+    path: '/api/chapter/:slug/:chapterNumber',
+    label: 'Chapter Pages',
+    description: 'Chapter page images as direct CDN URLs. Ready to display in any reader.',
     category: 'Manga',
     icon: FileText,
     params: [
-      { name: 'hid', placeholder: 'vy36n-the-tyrants-overprotective-contract-mother', required: true },
-      { name: 'chapterSlug', placeholder: '5931836-chapter-1', required: true },
+      { name: 'slug', placeholder: 'is-it-bad-that-the-main-character-s-a-roleplayer-1d35e5bd', required: true },
+      { name: 'chapterNumber', placeholder: '1', required: true },
     ],
   },
   {
-    id: 'collections',
+    id: 'series-ranking',
     method: 'GET',
-    path: '/api/collections',
-    label: 'Collections (HTML)',
-    description: 'Collections listing scraped from the collections page.',
-    category: 'Collections',
-    icon: Library,
-  },
-  {
-    id: 'collectionsList',
-    method: 'GET',
-    path: '/api/collections/list',
-    label: 'Collections (API)',
-    description: 'Paginated collections via the upstream public API.',
-    category: 'Collections',
-    icon: Layers,
-    queryParams: [
-      { name: 'sort', placeholder: 'trending', defaultValue: 'trending' },
-      { name: 'page', placeholder: '1', defaultValue: '1' },
-      { name: 'limit', placeholder: '20', defaultValue: '20' },
-    ],
-  },
-  {
-    id: 'collection',
-    method: 'GET',
-    path: '/api/collection/:id',
-    label: 'Collection Detail',
-    description: 'A single collection with owner, cover, and preview of contained manga.',
-    category: 'Collections',
-    icon: Library,
-    params: [{ name: 'id', placeholder: '75221', required: true }],
-  },
-  {
-    id: 'comments',
-    method: 'GET',
-    path: '/api/comments',
-    label: 'Comments',
-    description: 'Recent site-wide comments via the upstream public API. Paginated.',
-    category: 'Community',
-    icon: MessageSquare,
-    queryParams: [
-      { name: 'page', placeholder: '1', defaultValue: '1' },
-      { name: 'limit', placeholder: '20', defaultValue: '20' },
-    ],
-  },
-  {
-    id: 'profile',
-    method: 'GET',
-    path: '/api/profile/:hashId',
-    label: 'User Profile',
-    description: 'A user profile by hashId.',
-    category: 'Community',
-    icon: User,
-    params: [{ name: 'hashId', placeholder: 'qlkv9d', required: true }],
+    path: '/api/series-ranking',
+    label: 'Series Ranking',
+    description: 'Top ranked manga from the series ranking page.',
+    category: 'Discovery',
+    icon: Trophy,
   },
 ];
 
-const CATEGORIES = ['Discovery', 'Manga', 'Collections', 'Community'] as const;
+const CATEGORIES = ['Discovery', 'Manga'] as const;
 
 const CATEGORY_STYLES: Record<string, { dot: string; activeBg: string; activeText: string; activeRing: string; activeIcon: string }> = {
   Discovery: { dot: 'bg-emerald-400', activeBg: 'bg-emerald-500/15', activeText: 'text-emerald-300', activeRing: 'ring-emerald-500/30', activeIcon: 'text-emerald-400' },
   Manga: { dot: 'bg-sky-400', activeBg: 'bg-sky-500/15', activeText: 'text-sky-300', activeRing: 'ring-sky-500/30', activeIcon: 'text-sky-400' },
-  Collections: { dot: 'bg-amber-400', activeBg: 'bg-amber-500/15', activeText: 'text-amber-300', activeRing: 'ring-amber-500/30', activeIcon: 'text-amber-400' },
-  Community: { dot: 'bg-rose-400', activeBg: 'bg-rose-500/15', activeText: 'text-rose-300', activeRing: 'ring-rose-500/30', activeIcon: 'text-rose-400' },
 };
 
 function buildUrl(ep: Endpoint, pv: Record<string, string>, qv: Record<string, string>): string {
   let url = ep.path;
   if (ep.params) for (const p of ep.params) url = url.replace(`:${p.name}`, pv[p.name] || p.placeholder);
   if (ep.queryParams && ep.queryParams.length > 0) {
-    const qs = ep.queryParams.map((q) => `${q.name}=${qv[q.name] || q.defaultValue || ''}`).join('&');
-    url += `?${qs}`;
+    const qs = ep.queryParams
+      .filter((q) => qv[q.name] || q.defaultValue)
+      .map((q) => `${q.name}=${encodeURIComponent(qv[q.name] || q.defaultValue || '')}`)
+      .join('&');
+    if (qs) url += `?${qs}`;
   }
   return url;
 }
@@ -215,12 +188,12 @@ function App() {
       <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-sky-500 shadow-lg shadow-emerald-500/20">
-              <BookOpen className="h-5 w-5 text-slate-950" strokeWidth={2.5} />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 shadow-lg shadow-violet-500/20">
+              <BookOpen className="h-5 w-5 text-white" strokeWidth={2.5} />
             </div>
             <div>
-              <h1 className="text-lg font-bold tracking-tight">Comix API</h1>
-              <p className="text-xs text-slate-400">Scraping API for comix.to</p>
+              <h1 className="text-lg font-bold tracking-tight">AsuraScans API</h1>
+              <p className="text-xs text-slate-400">Scraping API for asurascans.com</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -228,7 +201,7 @@ function App() {
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
               Live
             </span>
-            <a href="https://comix.to" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-slate-600 hover:bg-slate-800">
+            <a href="https://asurascans.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-slate-600 hover:bg-slate-800">
               <ExternalLink className="h-3.5 w-3.5" />
               Source
             </a>
@@ -298,7 +271,7 @@ function App() {
                             <code className="text-xs font-mono text-sky-400">{p.name}</code>
                             {p.required && <span className="text-xs text-rose-400">*</span>}
                           </div>
-                          <input type="text" placeholder={p.placeholder} value={paramValues[p.name] || ''} onChange={(e) => setParamValues((prev) => ({ ...prev, [p.name]: e.target.value }))} className="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 font-mono text-sm text-slate-100 placeholder-slate-600 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20" />
+                          <input type="text" placeholder={p.placeholder} value={paramValues[p.name] || ''} onChange={(e) => setParamValues((prev) => ({ ...prev, [p.name]: e.target.value }))} className="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 font-mono text-sm text-slate-100 placeholder-slate-600 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20" />
                         </div>
                       ))}
                     </div>
@@ -311,7 +284,7 @@ function App() {
                       {selected.queryParams.map((q) => (
                         <div key={q.name}>
                           <code className="mb-1 block text-xs font-mono text-amber-400">{q.name}</code>
-                          <input type="text" placeholder={q.placeholder} value={queryValues[q.name] || q.defaultValue || ''} onChange={(e) => setQueryValues((prev) => ({ ...prev, [q.name]: e.target.value }))} className="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 font-mono text-sm text-slate-100 placeholder-slate-600 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20" />
+                          <input type="text" placeholder={q.placeholder} value={queryValues[q.name] || q.defaultValue || ''} onChange={(e) => setQueryValues((prev) => ({ ...prev, [q.name]: e.target.value }))} className="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 font-mono text-sm text-slate-100 placeholder-slate-600 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20" />
                         </div>
                       ))}
                     </div>
@@ -328,8 +301,8 @@ function App() {
                   {copied ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
                 </button>
               </div>
-              <button onClick={() => fetchEndpoint(currentUrl)} disabled={loading} className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-emerald-500 to-sky-500 px-5 py-2.5 text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/20 transition hover:from-emerald-400 hover:to-sky-400 disabled:opacity-50">
-                {loading ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-950 border-t-transparent" /> : <Send className="h-4 w-4" />}
+              <button onClick={() => fetchEndpoint(currentUrl)} disabled={loading} className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-violet-500 to-fuchsia-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/20 transition hover:from-violet-400 hover:to-fuchsia-400 disabled:opacity-50">
+                {loading ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <Send className="h-4 w-4" />}
                 Send
               </button>
             </div>
@@ -352,8 +325,8 @@ function App() {
               {loading ? (
                 <div className="flex items-center justify-center py-16">
                   <div className="flex flex-col items-center gap-3">
-                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-700 border-t-emerald-400" />
-                    <p className="text-sm text-slate-500">Fetching from comix.to...</p>
+                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-700 border-t-violet-400" />
+                    <p className="text-sm text-slate-500">Fetching from asurascans.com...</p>
                   </div>
                 </div>
               ) : error && !response ? (
@@ -372,14 +345,18 @@ function App() {
               <h3 className="text-sm font-semibold text-slate-200">Quick Start</h3>
             </div>
             <div className="space-y-2 text-sm text-slate-400">
-              <p>This API scrapes comix.to by parsing embedded JSON in its HTML pages. No API key required.</p>
+              <p>This API scrapes asurascans.com by parsing server-rendered HTML. No API key required. Chapter images are direct CDN URLs.</p>
               <div className="rounded-lg border border-slate-800 bg-slate-950 p-3">
-                <p className="mb-1 text-xs text-slate-500">Fetch trending manga:</p>
-                <code className="font-mono text-xs text-emerald-400">curl https://your-domain.com/api/home</code>
+                <p className="mb-1 text-xs text-slate-500">Browse manga:</p>
+                <code className="font-mono text-xs text-emerald-400">curl https://your-domain.com/api/browse</code>
               </div>
               <div className="rounded-lg border border-slate-800 bg-slate-950 p-3">
-                <p className="mb-1 text-xs text-slate-500">Get manga details by hid:</p>
-                <code className="font-mono text-xs text-emerald-400">curl https://your-domain.com/api/manga/vy36n</code>
+                <p className="mb-1 text-xs text-slate-500">Get manga detail with chapters:</p>
+                <code className="font-mono text-xs text-emerald-400">curl https://your-domain.com/api/manga/is-it-bad-that-the-main-character-s-a-roleplayer-1d35e5bd</code>
+              </div>
+              <div className="rounded-lg border border-slate-800 bg-slate-950 p-3">
+                <p className="mb-1 text-xs text-slate-500">Get chapter page images:</p>
+                <code className="font-mono text-xs text-emerald-400">curl https://your-domain.com/api/chapter/is-it-bad-that-the-main-character-s-a-roleplayer-1d35e5bd/1</code>
               </div>
             </div>
           </section>
@@ -388,7 +365,7 @@ function App() {
 
       <footer className="border-t border-slate-800 py-6">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 text-xs text-slate-500 sm:flex-row sm:px-6">
-          <p>Comix Scraping API - for educational purposes. Data belongs to comix.to.</p>
+          <p>AsuraScans Scraping API - for educational purposes. Data belongs to asurascans.com.</p>
           <div className="flex items-center gap-4">
             <span>{ENDPOINTS.length} endpoints</span>
             <span>Zero dependencies</span>
